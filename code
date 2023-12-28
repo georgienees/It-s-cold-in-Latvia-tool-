@@ -1,0 +1,35 @@
+python
+import requests
+from bs4 import BeautifulSoup
+import GoogleTranslate
+
+def main():
+    url = "https://www.google.com/search?q=how+cold+it+is+in+latvia&source=lnms&tbm=nws"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    articles = []
+    for result in soup.find_all('h3'):
+        if 'News' in result.text:
+            article_url = result.find('a')['href']
+            article_title = result.find('a').text
+            articles.append((article_url, article_title))
+
+    for article_url, article_title in articles:
+        response = requests.get(article_url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        content = soup.find('div', class_='article-content')
+        if content:
+            text = content.text
+        else:
+            text = soup.find('div', class_='post-content')
+
+        if text:
+            translated_text = GoogleTranslate.translate(text, dest='en')
+            print(f"{article_title}: {translated_text}")
+            with open(f"{article_title}.txt", 'w') as file:
+                file.write(translated_text)
+
+if __name__ == "__main__":
+    main()
